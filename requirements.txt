@@ -9,3 +9,4 @@ passlib~=1.7.4
 python-dotenv
 beanie~=1.10.8
 asyncio
+gunicorn==20.1.0

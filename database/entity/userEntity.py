@@ -78,7 +78,6 @@ class User(BaseModel):
             raise HTTPException(status_code=404, detail="User not found")
         return True
 
-
     # Create indexes on id and email fields
     async def create_indexes():
         await userEntity.create_index("id")

@@ -46,3 +46,7 @@ class User(BaseModel):
     @staticmethod
     async def find_one_user_by_email(user_email: str):
         return  await userEntity.find_one({"email": user_email})
+    # Create indexes on id and email fields
+    async def create_indexes():
+        await userEntity.create_index("id")
+        await userEntity.create_index("email", unique=True)

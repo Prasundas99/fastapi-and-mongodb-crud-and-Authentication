@@ -5,6 +5,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 from datetime import datetime
 
+from database.entity.userEntity import User
+
 from auth.authBearer import JWTBearer
 
 from routes.user import user as userRouter
@@ -19,6 +21,11 @@ async def http_exception_handler(request, exc):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(exc, status_code=status.HTTP_400_BAD_REQUEST)
+
+## startup event
+@app.on_event("startup")
+async def startup_event():
+    await User.create_indexes()
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,4 +49,4 @@ async def index():
     }
 
 app.include_router(authRouter, tags=['auth'], prefix='/auth')
-app.include_router(userRouter, tags=['User'], prefix='/user',dependencies=[Depends(get_token_header)])
+app.include_router(userRouter, tags=['user'], prefix='/user',dependencies=[Depends(get_token_header)])

@@ -1,9 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config.globals import DB_URI , DB_NAME
 
-client = AsyncIOMotorClient(DB_URI)
-db = client[DB_NAME]
+def init_db():
+    client = AsyncIOMotorClient(DB_URI)
+    db = client[DB_NAME]
+    return db
 
-userEntity = db['users']
 
 

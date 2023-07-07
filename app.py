@@ -8,6 +8,7 @@ from datetime import datetime
 from database.entity.userEntity import User
 
 from auth.authBearer import JWTBearer
+from database.collections import init_db
 
 from routes.user import user as userRouter
 from routes.auth import auth as authRouter 
@@ -22,9 +23,10 @@ async def http_exception_handler(request, exc):
 async def validation_exception_handler(request, exc):
     return JSONResponse(exc, status_code=status.HTTP_400_BAD_REQUEST)
 
-## startup event
+# startup event
 @app.on_event("startup")
 async def startup_event():
+    db = init_db()
     await User.create_indexes()
 
 app.add_middleware(
@@ -49,4 +51,4 @@ async def index():
     }
 
 app.include_router(authRouter, tags=['auth'], prefix='/auth')
-app.include_router(userRouter, tags=['user'], prefix='/user',dependencies=[Depends(get_token_header)])
+app.include_router(userRouter, tags=['user'], prefix='/user')

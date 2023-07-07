@@ -3,8 +3,9 @@ from bson.objectid import ObjectId
 from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from database.collections import db
 
-from database.collections import userEntity
+userEntity = db['users']
 
 class User(BaseModel):
     id: str
@@ -14,8 +15,8 @@ class User(BaseModel):
     createdAt: datetime
     updatedAt: datetime
 
-    @staticmethod
-    async def create_user(name: str, email: str, password: str):
+    @classmethod
+    async def create_user(cls, name: str, email: str, password: str):
         hashed_password = bcrypt.hash(password)
         current_time = datetime.now()
         user_data = {
@@ -27,20 +28,20 @@ class User(BaseModel):
         }
         result = await userEntity.insert_one(user_data)
         user_id = str(result.inserted_id)
-        return User(id=user_id, name=name, email=email, password=hashed_password, createdAt=current_time, updatedAt=current_time)
+        return cls(id=user_id, name=name, email=email, password=hashed_password, createdAt=current_time, updatedAt=current_time)
 
     @staticmethod
     async def delete_user(user_id: str):
         result = await userEntity.delete_one({"_id": ObjectId(user_id)})
         return result.deleted_count > 0
 
-    @staticmethod
-    async def find_all_users():
+    @classmethod
+    async def find_all_users(cls):
         cursor = userEntity.find()
         users = []
         async for document in cursor:
             user_id = str(document["_id"])
-            item = User(
+            item = cls(
                 id=user_id,
                 name=document["name"],
                 email=document["email"],
@@ -51,12 +52,12 @@ class User(BaseModel):
             users.append(item.dict())
         return users
 
-    @staticmethod
-    async def find_one_user_by_id(user_id: str):
+    @classmethod
+    async def find_one_user_by_id(cls,user_id: str):
         document = await userEntity.find_one({"_id": ObjectId(user_id)})
         if not document:
             raise HTTPException(status_code=404, detail="User not found")
-        return User(
+        return cls(
             id=str(document["_id"]),
             name=document["name"],
             email=document["email"],
@@ -65,10 +66,10 @@ class User(BaseModel):
             updatedAt=document["updatedAt"]
         )
 
-    @staticmethod
-    async def find_one_user_by_email(user_email: str):
+    @classmethod
+    async def find_one_user_by_email(cls, user_email: str):
         return await userEntity.find_one({"email": user_email})
-    
+
     @staticmethod
     async def update_user(user_id: str, name: str, email: str):
         current_time = datetime.now()
@@ -79,6 +80,7 @@ class User(BaseModel):
         return True
 
     # Create indexes on id and email fields
+    @staticmethod
     async def create_indexes():
         await userEntity.create_index("id")
         await userEntity.create_index("email", unique=True)

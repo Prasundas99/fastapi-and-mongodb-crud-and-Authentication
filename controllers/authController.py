@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 async def registerController(name: str, email: str, password: str):
     user = await User.find_one_user_by_email(user_email=email)
     if user:
-        response = errorResponse("User with this email does not exist")
+        response = errorResponse("User with this email exist")
         print("user not found:", response)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response)
     try:
@@ -29,14 +29,13 @@ async def loginController(email: str, password: str):
     if not db_user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=errorResponse("User with this email does not exist"))    
     try:
-        if not bcrypt.verify(password, db_user['password']):
+        isMatched = bcrypt.verify(password, db_user['password'])
+        if not isMatched:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=errorResponse("Invalid password"))
 
         token = generateToken({"_id": str(db_user['_id']) ,"exp": datetime.now(tz=timezone.utc) + timedelta(days=69)})
         return successResponse("User Logged In",{
-            "data": {
                 "token": token,
-            }
         })
     except Exception as e:
         print("exception under Login controller:", e)

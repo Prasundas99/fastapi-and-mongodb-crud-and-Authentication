@@ -5,10 +5,6 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from database.collections import init_db
 
-db = init_db()
-
-userEntity = db['users']
-
 
 class User(BaseModel):
     id: str
@@ -19,7 +15,7 @@ class User(BaseModel):
     updatedAt: datetime
 
     @classmethod
-    async def create_user(cls, name: str, email: str, password: str):
+    async def create_user(cls, name: str, email: str, password: str, userEntity):
         hashed_password = bcrypt.hash(password)
         current_time = datetime.now()
         user_data = {
@@ -34,13 +30,13 @@ class User(BaseModel):
         return cls(id=user_id, name=name, email=email, password=hashed_password, createdAt=current_time, updatedAt=current_time)
 
     @staticmethod
-    async def delete_user(user_id: str):
+    async def delete_user(user_id: str, userEntity):
         result = await userEntity.delete_one({"_id": ObjectId(user_id)})
         return result.deleted_count > 0
 
     @classmethod
-    async def find_all_users(self, db):
-        cursor = db["users"].find()
+    async def find_all_users(self, userEntity):
+        cursor = userEntity.find()
         users = []
         for document in cursor:
             user_id = str(document["_id"])
@@ -56,8 +52,8 @@ class User(BaseModel):
         return users
 
     @classmethod
-    async def find_one_user_by_id(cls, user_id: str):
-        document = await userEntity.find_one({"_id": ObjectId(user_id)})
+    async def find_one_user_by_id(cls, user_id: str, userEntity):
+        document = userEntity.find_one({"_id": ObjectId(user_id)})
         if not document:
             raise HTTPException(status_code=404, detail="User not found")
         return cls(
@@ -70,14 +66,15 @@ class User(BaseModel):
         )
 
     @classmethod
-    async def find_one_user_by_email(cls, user_email: str):
-        return await userEntity.find_one({"email": user_email})
+    async def find_one_user_by_email(cls, user_email: str, userEntity):
+        return userEntity.find_one({"email": user_email})
 
     @staticmethod
-    async def update_user(user_id: str, name: str, email: str):
+    async def update_user(user_id: str, name: str, email: str, userEntity):
         current_time = datetime.now()
         update_data = {"name": name, "email": email, "updatedAt": current_time}
-        result = await userEntity.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+        result = userEntity.update_one(
+            {"_id": ObjectId(user_id)}, {"$set": update_data})
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="User not found")
         return True

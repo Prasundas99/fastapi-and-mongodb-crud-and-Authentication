@@ -3,9 +3,12 @@ from bson.objectid import ObjectId
 from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from database.collections import db
+from database.collections import init_db
+
+db = init_db()
 
 userEntity = db['users']
+
 
 class User(BaseModel):
     id: str
@@ -36,12 +39,12 @@ class User(BaseModel):
         return result.deleted_count > 0
 
     @classmethod
-    async def find_all_users(cls):
-        cursor = userEntity.find()
+    async def find_all_users(self, db):
+        cursor = db["users"].find()
         users = []
-        async for document in cursor:
+        for document in cursor:
             user_id = str(document["_id"])
-            item = cls(
+            item = self(
                 id=user_id,
                 name=document["name"],
                 email=document["email"],
@@ -53,7 +56,7 @@ class User(BaseModel):
         return users
 
     @classmethod
-    async def find_one_user_by_id(cls,user_id: str):
+    async def find_one_user_by_id(cls, user_id: str):
         document = await userEntity.find_one({"_id": ObjectId(user_id)})
         if not document:
             raise HTTPException(status_code=404, detail="User not found")
@@ -81,6 +84,6 @@ class User(BaseModel):
 
     # Create indexes on id and email fields
     @staticmethod
-    async def create_indexes():
-        await userEntity.create_index("id")
-        await userEntity.create_index("email", unique=True)
+    async def create_indexes(db):
+        db["users"].create_index("id")
+        db["users"].create_index("email", unique=True)

@@ -56,4 +56,4 @@ async def index():
     }
 
 app.include_router(authRouter, tags=['auth'], prefix='/auth')
-app.include_router(userRouter, tags=['user'], prefix='/user')
+app.include_router(userRouter, tags=['user'], prefix='/users' , dependencies=[Depends(get_token_header)])
